@@ -227,6 +227,63 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<GameRound> _gameHistory = [];
   static const int _maxHistoryLength = 20;
 
+  void _showExplanationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.lightbulb_outline, color: Colors.amber, size: 28),
+                    SizedBox(width: 12),
+                    Text(
+                      "Why This App Exists",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  "This isn't just another Rock Paper Scissors game - it's a demonstration of how we can make digital games provably fair.",
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  "In traditional online games, you have to trust that the computer isn't cheating by waiting to see your choice before making its own. This app solves that problem using math!",
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  "By showing you a commitment hash before you make your choice, and then revealing the proof afterward, we can mathematically guarantee that the computer made its choice before you did - just like in a real-world game!",
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 24),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text("Got it!"),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
 
   void _addToHistory(String winner) {
     if (_gameHistory.length >= _maxHistoryLength) {
@@ -421,86 +478,302 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget _buildVerificationInfo() {
-    if (!_revealPhase) {
-      return Card(
-        elevation: 4,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
+
+  Widget _buildHashDisplay(String label, String value) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              const Text(
-                'Commitment Hash:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              SelectableText(
-                _currentCommitment,
-                style: const TextStyle(fontSize: 14, fontFamily: 'monospace'),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'This hash proves the computer has already made its choice.',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+              Icon(Icons.key, size: 16, color: Colors.grey.shade600),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
-        ),
-      );
-    } else  {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const Text(
-              'Verification Details:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          const SizedBox(height: 8),
+          SelectableText(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'monospace',
+              color: Colors.blue.shade700,
+              fontWeight: FontWeight.w500,
             ),
-            const SizedBox(height: 10),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildChoiceDisplay(
+    String label, 
+    String value, 
+    IconData icon,
+    Color bgColor,
+    Color iconColor,
+  ) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Computer\'s choice: $_computerChoice $_computerChoice_emoji'),
-                      const SizedBox(height: 5),
-                      SelectableText('Salt: $_currentSalt'),
-                      const SizedBox(height: 5),
-                      SelectableText('Original commitment: $_currentCommitment'),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  flex: 1,
-                  child: SizedBox(
-                    height: 150,
-                    child: HtmlElementView(
-                      viewType: 'verification-console-iframe',
-                    ),
+                Icon(icon, size: 16, color: iconColor),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _generateNewCommitment();
-                });
-              },
-              child: const Text('Start Next Round'),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildVerificationInfo() {
+    return Column(
+      children: [
+        // Always show the commitment hash card
+        Card(
+          elevation: 4,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.blue.shade50,
+                  Colors.white,
+                ],
+              ),
+            ),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(Icons.lock_outline, color: Colors.blue.shade700),
+                    ),
+                    const SizedBox(width: 12),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Commitment Hash',
+                          style: TextStyle(
+                            fontSize: 18, 
+                            fontWeight: FontWeight.bold
+                          ),
+                        ),
+                        Text(
+                          'Computer\'s sealed choice',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildHashDisplay('COMMITMENT', _currentCommitment),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade100),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, 
+                        size: 20, 
+                        color: Colors.blue.shade700
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'This hash proves the computer has already made its choice',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        // Show verification details only in reveal phase
+        if (_revealPhase) ...[
+          const SizedBox(height: 20),
+          Card(
+            elevation: 4,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.purple.shade50,
+                    Colors.white,
+                  ],
+                ),
+              ),
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.verified_outlined, 
+                          color: Colors.purple.shade700
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Verification Details',
+                            style: TextStyle(
+                              fontSize: 18, 
+                              fontWeight: FontWeight.bold
+                            ),
+                          ),
+                          Text(
+                            'Proof of fair play',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.shade100,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            _buildChoiceDisplay(
+                              'Computer\'s Choice',
+                              '$_computerChoice $_computerChoice_emoji',
+                              Icons.computer,
+                              Colors.blue.shade100,
+                              Colors.blue.shade700,
+                            ),
+                            const SizedBox(width: 16),
+                            _buildHashDisplay('Secret Salt', _currentSalt),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 16),
+                        Container(
+                          height: 150,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: const HtmlElementView(
+                            viewType: 'verification-console-iframe',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _generateNewCommitment();
+                      });
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Start Next Round'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 
   Widget _buildScoreCard() {
@@ -613,6 +886,31 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  
+  Widget _buildChoiceSection() {
+    if (_revealPhase) {
+      return const SizedBox.shrink(); // Returns an empty widget during reveal phase
+    }
+    
+    return Column(
+      children: [
+        const Text(
+          'Make your choice:',
+          style: TextStyle(fontSize: 24),
+        ),
+        const SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildChoiceButton('Rock', '🪨'),
+            _buildChoiceButton('Paper', '📄'),
+            _buildChoiceButton('Scissors', '✂️'),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -635,6 +933,13 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
+      
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showExplanationDialog,
+        child: const Icon(Icons.question_mark),
+        tooltip: 'But Why, Though?',
+      ),
+
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -667,19 +972,7 @@ class _MyHomePageState extends State<MyHomePage> {
               const SizedBox(height: 20),
               _buildVerificationInfo(),
               const SizedBox(height: 30),
-              const Text(
-                'Make your choice:',
-                style: TextStyle(fontSize: 24),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildChoiceButton('Rock', '🪨'),
-                  _buildChoiceButton('Paper', '📄'),
-                  _buildChoiceButton('Scissors', '✂️'),
-                ],
-              ),
+              _buildChoiceSection(), // Replace the direct choice buttons with this method
               const SizedBox(height: 30),
               if (_revealPhase) ...[
                 Card(

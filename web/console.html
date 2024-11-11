@@ -120,6 +120,7 @@
     
     const consoleElement = document.getElementById('console');
     consoleElement.value = command;
+    document.getElementById('output').textContent = eval(consoleElement.value);;
     
     // Auto-adjust textarea height
     function adjustTextareaHeight() {
